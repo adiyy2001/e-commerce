@@ -7,10 +7,10 @@ const app = express();
 
 
 const productsRoute = require('./routes/products');
-const usersRoute = require('./routes/users');
+const usersRoute = require('./routes/orders');
 
 app.use('/api/products', productsRoute)
-app.use('/api/users', usersRoute)
+app.use('/api/orders', usersRoute)
 
 app.use(cors({
     origin: "*",
