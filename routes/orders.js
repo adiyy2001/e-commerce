@@ -1,29 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../config/helpers');
+const {db} = require('../config/helpers');
 
 router.get('/', (req, res) => {
-    db.table('orders_details as od')
-        .join([
-            {
-                table: 'orders as o',
-                on: 'o.id = od.order_id'
-            },
-            {
-                table: 'products as p',
-                on: 'p.id = od.product_id'
-            },
-            {
-                table: 'users as u',
-                on: 'u.id = o.user_id'
-            }
-        ])
+    ordersDetailsJoin
         .withFields(['o.id', 'p.title', 'p.description', 'p.price', 'u.username'])
         .getAll()
         .then(orders => {
             return orders.length > 0
-            ? res.json(orders)
-            : res.json({message: "No orders found"});
+                ? res.json(orders)
+                : res.json({message: "No orders found"});
 
         }).catch(err => res.json(err));
 });
@@ -31,30 +17,16 @@ router.get('/', (req, res) => {
 router.get('/:id', async (req, res) => {
     let orderId = req.params.id;
 
-    db.table('orders_details as od')
-        .join([
-            {
-                table: 'orders as o',
-                on: 'o.id = od.order_id'
-            },
-            {
-                table: 'products as p',
-                on: 'p.id = od.product_id'
-            },
-            {
-                table: 'users as u',
-                on: 'u.id = o.user_id'
-            }
-        ])
+    ordersDetailsJoin
         .withFields(
             ['o.id', 'p.title', 'p.description', 'p.price', 'p.image', 'od.quantity as quantityOrdered']
-         )
+        )
         .filter({'o.id': orderId})
         .getAll()
         .then(orders => {
             return orders.length > 0
-            ? res.json(orders)
-            : res.json({message: "No orders found"});
+                ? res.json(orders)
+                : res.json({message: "No orders found"});
 
         }).catch(err => res.json(err));
 });
@@ -72,8 +44,11 @@ router.post('/new', async (req, res) => {
             if (newOrderId > 0) {
                 products.forEach(async (p) => {
 
-                    let data = await db.table('products').filter({id: p.id}).withFields(['quantity']).get();
-
+                    let data = await db
+                        .table('products')
+                        .filter({id: p.id})
+                        .withFields(['quantity'])
+                        .get();
 
 
                     let inCart = parseInt(p.incart);
@@ -85,6 +60,7 @@ router.post('/new', async (req, res) => {
 
                         if (data.quantity < 0) {
                             data.quantity = 0;
+
                         }
 
                     } else {
@@ -117,9 +93,7 @@ router.post('/new', async (req, res) => {
                 products: products
             })
         }).catch(err => res.json(err));
-    }
-
-    else {
+    } else {
         res.json({message: 'New order failed', success: false});
     }
 
@@ -131,5 +105,21 @@ router.post('/payment', (req, res) => {
     }, 3000)
 });
 
+
+const ordersDetailsJoin = db.table('orders_details as od')
+    .join([
+        {
+            table: 'orders as o',
+            on: 'o.id = od.order_id'
+        },
+        {
+            table: 'products as p',
+            on: 'p.id = od.product_id'
+        },
+        {
+            table: 'users as u',
+            on: 'u.id = o.user_id'
+        }
+    ]);
 
 module.exports = router;
